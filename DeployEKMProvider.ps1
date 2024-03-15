@@ -52,7 +52,6 @@
       -updateCerts `
 
 .LINK
-  - Script source repository: https://github.com/joshRooz/powershell-ekm-provider.git
   - Official HashiCorp Vault EKM Provider documentation: https://developer.hashicorp.com/vault/docs/platform/mssql
   - Official Microsoft SQL Server EKM documentation: https://learn.microsoft.com/en-us/sql/relational-databases/security/encryption/extensible-key-management-ekm
 #>

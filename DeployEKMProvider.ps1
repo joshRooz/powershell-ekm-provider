@@ -6,7 +6,7 @@
   This script installs the Vault EKM Provider on a Windows machine.
 
 .PARAMETER vaultApiBaseUrl
-  The base URL of the Vault server's API endpoint. This should include the protocol and port number. For example, https://vault.example.com:8200.
+  The base URL of the Vault cluster. This should include the protocol and port number. For example, https://vault.example.com:8200.
 
 .PARAMETER enableTrace
   Enable Vault EKM Provider trace logging. Default is false.
@@ -21,7 +21,7 @@
   The path to the Transit Secrets Engine mount. If unset, the script will use the default Transit mount.
 
 .PARAMETER ekmVersion
-  The version of the EKM Provider to install. Default is "0.2.2".
+  The version of the EKM Provider to install. Must be a semantic version. For example, 0.2.2.
 
 .PARAMETER ekmWorkingDir
   The directory where the EKM Provider archive will be downloaded and extracted. Default is "$Env:USERPROFILE\Downloads\ekm".
@@ -70,7 +70,8 @@ Param(
   [string]$transitMountPath = $null,
 
   # EKM Installation Parameters
-  [string]$ekmVersion = "0.2.2",
+  [Parameter(Mandatory=$true)]
+  [string]$ekmVersion,
   [string]$ekmWorkingDir = "$Env:USERPROFILE\Downloads\ekm",
   [switch]$skipEkmFetchRelease,
   [switch]$updateCerts,
@@ -138,7 +139,7 @@ if ($updateCerts) {
 
 # Extract, install, and configure the EKM Provider
 Expand-Archive $archive -DestinationPath $ekmWorkingDir -Force
-Start-Process -Wait -FilePath "msiexec" -ArgumentList "/i $ekmWorkingDir\vault-mssql-ekm-provider.msi VAULT_API_URL=$vaultApiBaseUrl VAULT_API_URL_IS_VALID=1 VAULT_INSTALL_FOLDER=`"C:\Program Files\HashiCorp\Transit Vault EKM Provider\`" /qb /l* $ekmWorkingDir\vault-mssql-ekm-provider.log" 
+Start-Process -Wait -FilePath "msiexec" -ArgumentList "/i $ekmWorkingDir\vault-mssql-ekm-provider.msi VAULT_API_URL=placeholder VAULT_API_URL_IS_VALID=1 VAULT_INSTALL_FOLDER=`"C:\Program Files\HashiCorp\Transit Vault EKM Provider\`" /qb /l* $ekmWorkingDir\vault-mssql-ekm-provider.log"
 Set-Content -Path "$env:SystemDrive\ProgramData\HashiCorp\Transit Vault EKM Provider\config.json" -Value $($config | ConvertTo-Json) 
 
 Write-Output "EKM Provider version $ekmVersion has been installed."

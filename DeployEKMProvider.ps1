@@ -23,13 +23,11 @@
 .PARAMETER ekmVersion
   The version of the EKM Provider to install. Default is "0.2.2".
 
-.PARAMETER ekmFetchRelease
-  If true, the script will download the EKM Provider archive from the HashiCorp releases.
-  If false, the script will expect the EKM Provider archive to be placed in $ekmWorkingDir named "vault-mssql-ekm-provider_<version>+ent_windows_amd64.zip."
-  Default is true.
-
 .PARAMETER ekmWorkingDir
   The directory where the EKM Provider archive will be downloaded and extracted. Default is "$Env:USERPROFILE\Downloads\ekm".
+
+.PARAMETER skipEkmFetchRelease
+  If set, the script will expect the EKM Provider archive to be pre-populated in $ekmWorkingDir named "vault-mssql-ekm-provider_<version>+ent_windows_amd64.zip."
 
 .PARAMETER updateCerts
   If true, the script will update the Windows certificate store with the latest root certificates from Microsoft.
@@ -46,11 +44,12 @@
       -updateCerts
 
 .EXAMPLE
-    Example upgrade with force specified. Caution: upgrading is an interruptive operation:
+    Example offline installation with minimal parameters:
     .\DeployEKMProvider.ps1 `
       -vaultApiBaseUrl https://vault.example.com:8200 `
       -ekmVersion 0.2.2 `
-      -force
+      -skipEkmFetchRelease `
+      -updateCerts `
 
 .LINK
   - Script source repository: https://github.com/joshRooz/powershell-ekm-provider.git
@@ -72,17 +71,23 @@ Param(
 
   # EKM Installation Parameters
   [string]$ekmVersion = "0.2.2",
-  [bool]$ekmFetchRelease = $true,
   [string]$ekmWorkingDir = "$Env:USERPROFILE\Downloads\ekm",
+  [switch]$skipEkmFetchRelease,
   [switch]$updateCerts,
   [string]$certsTempDir = "$Env:USERPROFILE\Downloads\certs"
 )
+
+function checkCreateDirectory ([string]$dir) {
+  if (-not (Test-Path -Path $dir)) {
+    New-Item -ItemType Directory -Path $dir | Out-Null
+  }
+}
 
 # Check if the EKM Provider installation exists
 try {
   $installed = Get-Package -Name "Transit Vault EKM Provider" -ErrorAction Stop
   if ($installed.Status -eq "Installed") {
-    Write-Output "EKM Provider version is already installed. Version: $($installed.Version). Exiting."
+    Write-Output "EKM Provider is already installed. Version: $($installed.Version)."
     exit 0
   }
 }
@@ -95,6 +100,8 @@ $os = "windows" ; $arch = "amd64"
 if (-not $ekmVersion.EndsWith("+ent")) {
   $ekmVersion += "+ent"
 }
+$archive = "{0}\vault-mssql-ekm-provider_{1}_{2}_{3}.zip" -f $ekmWorkingDir, $ekmVersion, $os, $arch
+
 
 # Set the EKM configuration hashmap that will be merged into config.json
 $config = @{}
@@ -104,21 +111,24 @@ foreach ($key in @('vaultApiBaseUrl', 'enableTrace', 'namespace', 'appRoleMountP
   }
 }
 
-if (!(Test-Path -Path $ekmWorkingDir)) {
-  New-Item -ItemType Directory -Path $ekmWorkingDir | Out-Null
+# Download the EKM Provider
+if (-not $skipEkmFetchRelease) {
+  checkCreateDirectory $ekmWorkingDir
+  $ekmProviderSourceUrl = "https://releases.hashicorp.com/vault-mssql-ekm-provider/{0}/vault-mssql-ekm-provider_{0}_{1}_{2}.zip" -f $ekmVersion, $os, $arch
+  Invoke-WebRequest -URI $ekmProviderSourceUrl -Outfile $archive
 }
 
-# Download the EKM Provider
-if ($ekmFetchRelease) {
-  $ekmProviderSourceUrl = "https://releases.hashicorp.com/vault-mssql-ekm-provider/{0}/vault-mssql-ekm-provider_{0}_{1}_{2}.zip" -f $ekmVersion, $os, $arch
-  Invoke-WebRequest -URI $ekmProviderSourceUrl -Outfile ("{0}\vault-mssql-ekm-provider_{1}_{2}_{3}.zip" -f $ekmWorkingDir, $ekmVersion, $os, $arch)
+if (-not (Test-Path -Path $archive )) {
+  Write-Error `
+  -Category ObjectNotFound `
+  -Message "EKM Provider archive not found at '$archive'"
+  exit 1
 }
 
 if ($updateCerts) {
-  if (!(Test-Path -Path $certsTempDir)) {
-    New-Item -ItemType Directory -Path $certsTempDir | Out-Null
-  }
+  checkCreateDirectory $certsTempDir
 
+  # https://developer.hashicorp.com/vault/docs/platform/mssql/troubleshooting#authenticode-error
   Cmd.exe /C "certutil -syncwithWU $certsTempDir"
   Cmd.exe /C "extrac32 /L $certsTempDir $certsTempDir\authrootstl.cab authroot.stl"
   Cmd.exe /C "certutil -f -v -ent -AddStore Root $certsTempDir\authroot.stl"
@@ -127,7 +137,7 @@ if ($updateCerts) {
 }
 
 # Extract, install, and configure the EKM Provider
-Expand-Archive ("{0}\vault-mssql-ekm-provider_{1}_{2}_{3}.zip" -f $ekmWorkingDir, $ekmVersion, $os, $arch) -DestinationPath $ekmWorkingDir
+Expand-Archive $archive -DestinationPath $ekmWorkingDir -Force
 Start-Process -Wait -FilePath "msiexec" -ArgumentList "/i $ekmWorkingDir\vault-mssql-ekm-provider.msi VAULT_API_URL=$vaultApiBaseUrl VAULT_API_URL_IS_VALID=1 VAULT_INSTALL_FOLDER=`"C:\Program Files\HashiCorp\Transit Vault EKM Provider\`" /qb /l* $ekmWorkingDir\vault-mssql-ekm-provider.log" 
 Set-Content -Path "$env:SystemDrive\ProgramData\HashiCorp\Transit Vault EKM Provider\config.json" -Value $($config | ConvertTo-Json) 
 

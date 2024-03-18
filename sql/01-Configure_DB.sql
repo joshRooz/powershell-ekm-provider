@@ -19,9 +19,10 @@ CREATE CRYPTOGRAPHIC PROVIDER TransitVaultEKMProvider
 FROM FILE = 'C:\Program Files\HashiCorp\Transit Vault EKM Provider\TransitVaultEKM.dll'
 GO
 
--- Create stored procedures - requires an efficient way to easily update the procedures at scale.
--- ideally seamlessly execute the most preferred version of the stored procedures each time.
--- additionally,  principle of least privilege for the stored procedures
+-- Create stored procedures - requires an efficient way to easily update the procedures at scale
+-- checkout and execute the preferred commit ref SP each time (possibly, through temporary stored procedures?)
+-- additionally, would need to apply principle of least privilege, general SP best practices, and update to sp_executesql
+-- with parameters for SQL injection defense, etc.
 #git clone ...
 #sqlcmd -S <server> -d <database> ... -i ./CreateUpdateSetEKMProviderAdminAuth.sql
 #sqlcmd -S <server> -d <database> ... -i ./CreateUpdateSetEKMProviderKeyAuth.sql
@@ -41,31 +42,6 @@ EXECUTE [dbo].[SetEKMProviderKeyAuth]
     @roleid = '9ea4fee6-0c5b-39c6-a63f-e005c05358f0',
     @secretid = '00000000-0000-0000-0000-000000000001'
 GO
-
-
-/*
- main via 💠 ❯ vault write -f transit/keys/ekm-encryption-key/rotate 
-Success! Data written to: transit/keys/ekm-encryption-key/rotate
-
- main via 💠 ❯ vault read -field=keys -format=json transit/keys/ekm-encryption-key | jq
-*/
-EXECUTE [dbo].[SetEKMProviderKeyAuth]
-    @version = 2,
-    @transitkey = 'ekm-encryption-key',
-    @roleid = '9ea4fee6-0c5b-39c6-a63f-e005c05358f0',
-    @secretid = '00000000-0000-0000-0000-000000000002'
-GO
-
-/* rotate vault key again */
-EXECUTE [dbo].[SetEKMProviderKeyAuth]
-    @version = 3,
-    @transitkey = 'ekm-encryption-key',
-    @roleid = '9ea4fee6-0c5b-39c6-a63f-e005c05358f0',
-    -- secretid and kek version can change independently as long as the secretid is valid
-    @secretid = '00000000-0000-0000-0000-000000000002'
-GO
-
-
 
 
 -- enable TDE and protect the database encryption key with the asymmetric key

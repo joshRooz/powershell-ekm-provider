@@ -72,8 +72,12 @@ AS
     DECLARE @loginid int
     SET @loginid = (SELECT principal_id FROM sys.server_principals WHERE name = @login)
     if EXISTS (SELECT credential_id FROM sys.server_principal_credentials WHERE principal_id = @loginid)
-    BEGIN -- Drop the existing credential; error handling is critical between the drop and add operations
-        --print N'DROP EXISTING CREDENTIAL'
+    BEGIN -- Drop the existing credential from login; error handling is critical between the drop and add operations
+    -- This logic expects:
+    --    A single credential can only be mapped to a single SQL Server login.
+    --    And a SQL Server login can be mapped to only one credential.
+
+        --print N'DROP EXISTING CREDENTIAL FROM LOGIN'
         DECLARE @excred nvarchar(100) -- existing credential
         SET @excred = (
             SELECT c.name FROM sys.credentials c
@@ -91,6 +95,13 @@ AS
     --print N'ADD CREDENTIAL'
     SET @exec_stmt = 'ALTER LOGIN ' + @login + ' ADD CREDENTIAL ' + @cred
     
+    exec (@exec_stmt)
+    if @@error <> 0
+        return (1)
+
+    -- Drop the old credential
+    --print N'DROP EXISTING CREDENTIAL'
+    SET @exec_stmt = 'DROP CREDENTIAL ' + @excred
     exec (@exec_stmt)
     if @@error <> 0
         return (1)

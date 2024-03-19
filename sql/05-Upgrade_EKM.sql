@@ -9,7 +9,6 @@ Cryptographic provider is now disabled. However users who have an open cryptogra
 -- Upgrade the EKM Provider via PowerShell or through other means
 -- Will prompt to stop SQL Server - can continue without stopping (prompted twice)
 
--- THE UPGRADE STEPS ARE OUT OF ORDER ON THE DOCS!!
 
 ALTER CRYPTOGRAPHIC PROVIDER TransitVaultEKMProvider ENABLE;
 
@@ -22,6 +21,8 @@ SELECT name,version,is_enabled FROM sys.cryptographic_providers where name = 'Tr
 
 
 /*
+IT APPEARS THE UPGRADE STEPS MIGHT BE OUT OF ORDER ON THE HASHI EKM DOCS
+
 MS reference for refining these steps -
 https://learn.microsoft.com/en-us/sql/relational-databases/security/encryption/sql-server-connector-maintenance-troubleshooting?view=sql-server-ver16
 */

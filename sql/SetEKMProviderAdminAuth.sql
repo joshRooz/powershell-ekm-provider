@@ -32,6 +32,46 @@ AS
     if @return <> 0
         return (1)
 
+    DECLARE @advopts int
+    SELECT @advopts = convert(int, value_in_use) FROM sys.configurations where NAME = 'show advanced options'
+    if @advopts <> 1
+    BEGIN
+        -- Enable advanced options
+        exec sp_configure 'show advanced options', 1
+        if @@error <> 0
+            return (1)
+
+        reconfigure
+        if @@error <> 0
+            return (1)
+    END
+
+    -- Validate ekm provider is enabled
+    DECLARE @ekmprovider int
+    SELECT @ekmprovider = convert(int, value_in_use) FROM sys.configurations where NAME = 'EKM provider enabled'
+    if @ekmprovider <> 1
+    BEGIN
+        -- Enable EKM Provider
+        exec sp_configure 'EKM provider enabled', 1
+        if @@error <> 0
+            return (1)
+
+        reconfigure
+        if @@error <> 0
+            return (1)
+    END
+
+    -- Validate the cryptographic provider
+    DECLARE @dllpath nvarchar(100) = 'C:\Program Files\HashiCorp\Transit Vault EKM Provider\TransitVaultEKM.dll'
+    if NOT EXISTS (SELECT * FROM sys.cryptographic_providers WHERE dll_path = @dllpath AND name = @cryptographicprovider)
+    BEGIN
+        -- Create the cryptographic provider
+        SET @exec_stmt = 'CREATE CRYPTOGRAPHIC PROVIDER ' + @cryptographicprovider + ' FROM FILE = ''' + @dllpath + ''''
+        exec (@exec_stmt)
+        if @@error <> 0
+            return (1)
+    END
+
     -- Create the credential
     --print N'BEGIN CREDENTIAL SECTION'
     SET @exec_stmt = 'CREATE CREDENTIAL ' + @creds

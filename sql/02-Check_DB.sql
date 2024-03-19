@@ -21,6 +21,8 @@ FROM sys.dm_database_encryption_keys k
 GROUP BY encryption_state, encryptor_thumbprint
 
 -- Check the cred and login relationship
-SELECT c.name FROM sys.credentials c
-JOIN sys.server_principal_credentials spc ON c.credential_id = spc.credential_id
+SELECT sp.name as principal, c.name as credential
+FROM sys.server_principal_credentials spc
+JOIN sys.credentials c ON c.credential_id = spc.credential_id
+JOIN sys.server_principals sp ON sp.principal_id = spc.principal_id
 GO

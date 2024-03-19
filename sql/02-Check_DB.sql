@@ -26,3 +26,12 @@ FROM sys.server_principal_credentials spc
 JOIN sys.credentials c ON c.credential_id = spc.credential_id
 JOIN sys.server_principals sp ON sp.principal_id = spc.principal_id
 GO
+
+
+
+-- Test offline and onlining --
+USE [master] ALTER DATABASE [TestTDE1] SET  OFFLINE;
+select name,state_desc from sys.databases where name like 'Test%';
+USE [master] ALTER DATABASE [TestTDE1] SET  ONLINE;
+select name,state_desc from sys.databases where name like 'Test%';
+GO

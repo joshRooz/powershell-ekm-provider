@@ -3,9 +3,9 @@
 --   1. Create the asymmetric key, if the version specified does not exist. (kek rotation - Recommend matching the HashiCorp Vault Transit mount version)
 --   2. Create the login, if it does not exist
 --   3. Create and add a new credential to the login, dropping any existing credential (secret-id rotation)
--- Usage: EXECUTE [dbo].[SetEKMProviderKeyAuth] @version = 1, @transitkey = 'adp', @roleid = '<uuid1>', @secretid = '<uuid2>'
+-- Usage: EXECUTE #SetEKMProviderKeyAuth @version = 1, @transitkey = 'adp', @roleid = '<uuid1>', @secretid = '<uuid2>'
 
-CREATE OR ALTER PROCEDURE [dbo].[SetEKMProviderKeyAuth]
+CREATE OR ALTER PROCEDURE #SetEKMProviderKeyAuth
     @version int
     ,@transitkey nvarchar(40)                                        -- Name of the key in HashiCorp Vault Transit mount
     ,@roleid nvarchar(40)                                            -- AppRole RoleID from HashiCorp Vault
@@ -108,3 +108,13 @@ AS
 
 
     return (0)
+GO
+
+
+-- parameter values templated to be replaced by trusted orchestrator
+EXECUTE #SetEKMProviderKeyAuth
+    @version = $(KEYVERSION),
+    @transitkey = $(TRANSITKEY),
+    @roleid = $(ROLEID),
+    @secretid = $(SECRETID)
+GO

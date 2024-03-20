@@ -2,25 +2,22 @@
 -- checkout and execute the preferred commit ref SP each time (possibly, through temporary stored procedures?)
 -- additionally, would need to apply principle of least privilege, general SP best practices, and update to sp_executesql
 -- with parameters for SQL injection defense, etc.
-#git clone ...
-#sqlcmd -S <server> -d <database> ... -i ./CreateUpdateSetEKMProviderAdminAuth.sql
-#sqlcmd -S <server> -d <database> ... -i ./CreateUpdateSetEKMProviderKeyAuth.sql
+/*
+$Args = @(
+    "LOGIN='jroose-mssql\mssql-tde-dev'",
+    "ROLEID='9ea4fee6-0c5b-39c6-a63f-e005c05358f0'",
+    "SECRETID='00000000-0000-0000-0000-000000000000'"
+)
+Invoke-Sqlcmd -InputFile "$env:USERPROFILE\Downloads\powershell-ekm-provider-main\sql\SetEKMProviderAdminAuth.sql" -Variable $Args
+$Args.Remove("LOGIN") 
 
 
--- Create credentials for an admin
-EXECUTE [dbo].[SetEKMProviderAdminAuth]
-    @login = 'jroose-mssql\mssql-tde-dev',
-    @roleid = '9ea4fee6-0c5b-39c6-a63f-e005c05358f0',
-    @secretid = '00000000-0000-0000-0000-000000000000'
-GO
-
--- Create the asymmetric key and login for the EKM provider
-EXECUTE [dbo].[SetEKMProviderKeyAuth]
-    @version = 1,
-    @transitkey = 'ekm-encryption-key',
-    @roleid = '9ea4fee6-0c5b-39c6-a63f-e005c05358f0',
-    @secretid = '00000000-0000-0000-0000-000000000001'
-GO
+$Args = @(
+    "KEYVERSION=1",
+    "TRANSITKEY='ekm-encryption-key'",
+)
+Invoke-Sqlcmd -InputFile "$env:USERPROFILE\Downloads\powershell-ekm-provider-main\sql\SetEKMProviderKeyAuth.sql" -Variable $Args
+*/
 
 
 -- enable TDE and protect the database encryption key with the asymmetric key

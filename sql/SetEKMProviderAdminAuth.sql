@@ -3,9 +3,9 @@
 --  1. Create a credential for the sql server admin
 --  2. Add the credential to the login, dropping any existing credential
 -- Preconditions: The cryptographic provider must be created.
--- Usage: EXECUTE [dbo].[SetEKMProviderAdminAuth] @login = 'admlogin', @roleid = '<uuid1>', @secretid = '<uuid2>'
+-- Usage: EXECUTE #SetEKMProviderAdminAuth @login = 'admlogin', @roleid = '<uuid1>', @secretid = '<uuid2>'
 
-CREATE OR ALTER PROCEDURE [dbo].[SetEKMProviderAdminAuth]
+CREATE OR ALTER PROCEDURE #SetEKMProviderAdminAuth
     @login nvarchar(60)                                              -- SQL Server administrator login that uses vault to set up and manage encryption scenarios
     ,@roleid nvarchar(40)                                            -- AppRole RoleID from HashiCorp Vault
     ,@secretid nvarchar(40)                                          -- AppRole SecretID from HashiCorp Vault
@@ -120,3 +120,12 @@ AS
 
 
     return (0)
+GO
+
+
+-- parameter values templated to be replaced by trusted orchestrator
+EXECUTE #SetEKMProviderAdminAuth
+    @login = $(LOGIN),
+    @roleid = $(ROLEID),
+    @secretid = $(SECRETID)
+GO

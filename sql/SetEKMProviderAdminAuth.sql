@@ -123,9 +123,11 @@ AS
 GO
 
 
--- parameter values templated to be replaced by trusted orchestrator
+-- parameter values to be populated by trusted orchestrator
 EXECUTE #SetEKMProviderAdminAuth
     @login = $(LOGIN),
-    @roleid = $(ROLEID),
-    @secretid = $(SECRETID)
+    @roleid = $(APPROLEID),
+    @secretid = $(APPROLESECRETID),
+    @cryptographicprovider = $(CRYPTOGRAPHICPROVIDER),
+    @credsprefix = $(CREDSPREFIX)
 GO

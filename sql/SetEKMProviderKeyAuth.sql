@@ -111,10 +111,12 @@ AS
 GO
 
 
--- parameter values templated to be replaced by trusted orchestrator
+-- parameter values to be populated by trusted orchestrator
 EXECUTE #SetEKMProviderKeyAuth
     @version = $(KEYVERSION),
     @transitkey = $(TRANSITKEY),
-    @roleid = $(ROLEID),
-    @secretid = $(SECRETID)
+    @roleid = $(APPROLEID),
+    @secretid = $(APPROLESECRETID),
+    @cryptographicprovider = $(CRYPTOGRAPHICPROVIDER),
+    @sqlkeyprefix = $(SQLKEYPREFIX)
 GO

@@ -13,6 +13,7 @@ CREATE OR ALTER PROCEDURE #SetEKMProviderKeyAuth
     ,@cryptographicprovider nvarchar(40) = 'TransitVaultEKMProvider' -- Name of the cryptographic provider
     ,@sqlkeyprefix nvarchar(40) = 'TransitVaultAK'                   -- Prefix for the asymmetric key name in SQL Server
 AS
+    SET NOCOUNT ON;
     DECLARE @iso8601 NVARCHAR(20)
     DECLARE @sqlkey NVARCHAR(80)
     DECLARE @cred NVARCHAR(100)
@@ -73,9 +74,10 @@ AS
     SET @loginid = (SELECT principal_id FROM sys.server_principals WHERE name = @login)
     if EXISTS (SELECT credential_id FROM sys.server_principal_credentials WHERE principal_id = @loginid)
     BEGIN -- Drop the existing credential from login; error handling is critical between the drop and add operations
-    -- This logic expects:
-    --    A single credential can only be mapped to a single SQL Server login.
-    --    And a SQL Server login can be mapped to only one credential.
+    /* This logic depends on the following constraints:
+            A single credential can only be mapped to a single SQL Server login.
+            And a SQL Server login can be mapped to only one credential.
+    */
 
         --print N'DROP EXISTING CREDENTIAL FROM LOGIN'
         DECLARE @excred nvarchar(100) -- existing credential
@@ -88,7 +90,7 @@ AS
 
         exec (@exec_stmt)
         if @@error <> 0
-            return (1)
+            return (100)
     END
 
     -- Alter the login
@@ -97,7 +99,7 @@ AS
     
     exec (@exec_stmt)
     if @@error <> 0
-        return (1)
+        return (101)
 
     -- Drop the old credential
     --print N'DROP EXISTING CREDENTIAL'

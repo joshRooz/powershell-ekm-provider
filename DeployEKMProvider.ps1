@@ -77,6 +77,8 @@ Param(
   [string]$certsTempDir = "$Env:USERPROFILE\Downloads\certs"
 )
 
+Set-StrictMode -Version 3.0
+
 function checkCreateDirectory ([string]$dir) {
   if (-not (Test-Path -Path $dir)) {
     New-Item -ItemType Directory -Path $dir | Out-Null

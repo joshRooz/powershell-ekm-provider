@@ -59,6 +59,8 @@ param (
   [string]$TransitKey
 )
 
+Set-StrictMode -Version 3.0
+
 function Get-CertificateChain {
   param (
     [string]$Address,

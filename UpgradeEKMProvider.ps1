@@ -50,6 +50,8 @@ Param(
   [switch]$force
 )
 
+Set-StrictMode -Version 3.0
+
 function checkCreateDirectory ([string]$dir) {
   if (-not (Test-Path -Path $dir)) {
     New-Item -ItemType Directory -Path $dir | Out-Null

@@ -54,6 +54,8 @@ param (
   [string]$sqlPath
 )
 
+Set-StrictMode -Version 3.0
+
 # PSBoundParameters will only contain the parameters that were actually passed to the script.
 # we must manually set the default values for cryptographicProvider and credsPrefix
 $args = @(

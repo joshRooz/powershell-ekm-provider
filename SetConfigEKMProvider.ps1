@@ -59,6 +59,8 @@ Param(
   [switch]$dryRun
 )
 
+Set-StrictMode -Version 3.0
+
 # Check if the EKM Provider installation exists
 try { $installed = Get-Package -Name "Transit Vault EKM Provider" -ErrorAction Stop }
 catch {
